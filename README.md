@@ -1,43 +1,64 @@
-# dsh-web-search-plus
+# @loommii/dsh-web-search-plus
 
-DSH `@deepseek-ai/dsh-web-search-deepseek` 的可配置化增强版。
+[English](#) | 中文(计划中)
 
-## 目标
+`@deepseek-ai/dsh-web-search-deepseek` 的可配置化增强版（fork）。
 
-官方 web_search 插件写死了：
+> 状态：v0.1 — 已完成源文件复制，等待 3 个设计决策后开始魔改。
+> 详细需求记录见 `tmp/web-search-plus-需求记录.md`（本地，不上传）。
 
-- `model = "deepseek-v4-flash"`（无前缀、无可配置入口）
-- `baseURL = "https://api.deepseek.com/anthropic/v1"` + 路径硬拼 `/messages`
-- 鉴权头 `x-api-key`（Anthropic 协议风格）
+---
 
-这导致想接 Anthropic-兼容但路径/协议不同的端点（如 commandcode 的 `/provider/v1/chat/completions`、Brave、Tavily 等）完全接不上。
+## 这是什么
 
-本项目把这 3 项变成可配置项，**不重写整个 plugin**，只覆盖官方代码中的写死常量与硬编码拼接。
+DSH（DeepSeek Harness）的官方 web_search 插件 `@deepseek-ai/dsh-web-search-deepseek` 写死了 3 件事：
 
-## 计划改造点（按优先级）
+| 项 | 官方默认值 | 问题 |
+|---|---|---|
+| `model` | `deepseek-v4-flash` | 写死在源码，GUI 不暴露；接到 Anthropic-兼容但 model 不同的端点（如 commandcode 的 `deepseek/deepseek-v4-flash`）就 400 |
+| 路径拼接 | ${baseURL}/messages | 硬拼 `/messages`，路径不可配置 |
+| auth header | `x-api-key: ...` + `authorization: Bearer ...` | 双发，固定 Anthropic 风格 |
 
-1. **model 可配置** — 通过 yaml / 环境变量覆盖默认 `deepseek-v4-flash`
-2. **baseURL 完整可配** — 用户给完整 URL（含路径），plugin 不再自动拼接 `/messages`
-3. **auth scheme 可配置** — 在 Anthropic `x-api-key` 与 OpenAI `Authorization: Bearer` 之间切换
-4. **保留官方 plugin 为依赖** — 改造而非重写；DSH 升级时只需 rebase 改动部分
+本项目把这 3 项变成用户可配置——同一份代码既能驱动 DeepSeek 官方搜索、也能驱动 commandcode、也能驱动任何 Anthropic-/OpenAI-兼容端点。
 
-## 状态
+## 与官方 plugin 的关系
 
-⚠️ **仍在规划阶段，尚未发布可用代码。**
+- 不修改 DSH 全局安装目录下的官方代码
+- 不发布到 npm（仅 GitHub）
+- 通过 git URL 在 DSH 的 profile 里安装
+- 官方 `@deepseek-ai/dsh-web-search-deepseek` 仍可独立运行
 
-完整的调研、源码追溯、问题诊断记录在 `WEB_SEARCH_RESEARCH.md`（计划中）。
+## 计划改造点（待用户决策）
 
-## 起因
+1. model 可配置 — 通过 yaml / 环境变量覆盖默认 `deepseek-v4-flash`
+2. baseURL 完整可配 — 用户给完整 URL（含路径），plugin 不再自动拼接 `/messages`
+3. auth scheme 可配置 — 在 Anthropic `x-api-key` 与 OpenAI `Authorization: Bearer` 之间切换
 
-源于 DSH 内置 web_search 工具切到 commandcode 后端时的报错：
+详见 `tmp/web-search-plus-需求记录.md` §5.5（待决项 3/4/5）。
 
+## 当前状态
+
+- 官方 plugin 的 `lib/index.js` / `lib/invariant.js` / `lib/types/**.d.ts` 已复制到本仓库
+- `LICENSE`（MIT）保留上游版权声明
+- `package.json` 重写为 `@loommii/dsh-web-search-plus`，peerDependencies 锁版本与上游一致
+- 3 个魔改点尚未应用——等用户决定
+- 还未做新 plugin 的 GUI 卡片（如果要做）
+- 还未与 DSH 集成实测
+
+## 安装（计划中）
+
+```yaml
+# 在 DSH profile 的 cordis patch 里加：
+# - id: web-search-plus
+#   name: '@loommii/dsh-web-search-plus'
+#   config:
+#     baseURL: https://api.commandcode.ai/provider/v1
+#     model: deepseek/deepseek-v4-flash
+#     authScheme: openai-bearer
 ```
-Error: code run failed (exception): ToolCallError: Model "deepseek-v4-flash" is not supported on this endpoint.
-```
-
-根因不在 commandcode，而在 DSH 官方插件的 model id 与协议层硬编码——见后续 `WEB_SEARCH_RESEARCH.md`。
 
 ## 关联项目
 
-- [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) — DSH 主仓库（issues 已关闭，discussion 开放）
-- `@deepseek-ai/dsh-web-search-deepseek` — 本项目改造的官方 plugin（npm 全局安装在 `/opt/homebrew/lib/node_modules/`）
+- [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) — DSH 主仓库
+- [本仓库 GitHub 镜像](https://github.com/loommii/dsh-web-search-plus) — 发布地址
+- `@deepseek-ai/dsh-web-search-deepseek` — 本项目 fork 的官方 plugin

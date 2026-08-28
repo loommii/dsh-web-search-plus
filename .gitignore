@@ -1,0 +1,22 @@
+# 本地讨论/临时文件，不上传（2026-08-24）
+tmp/
+
+# Node.js 依赖
+node_modules/
+
+# 构建产物（本项目暂未构建，先防一手）
+dist/
+build/
+*.tsbuildinfo
+
+# 编辑器 / 系统
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 本地 secrets（万一以后写了 .env 之类的）
+.env
+.env.local
+*.local
