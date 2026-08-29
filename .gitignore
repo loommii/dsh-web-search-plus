@@ -20,3 +20,6 @@ build/
 .env
 .env.local
 *.local
+
+# pnpm 本地 store（本仓库独立安装时产生）
+.pnpm-store/

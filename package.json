@@ -1,46 +1,39 @@
 {
   "name": "@loommii/dsh-web-search-plus",
-  "description": "Configurable fork of @deepseek-ai/dsh-web-search-deepseek: makes model, baseURL, and auth scheme user-overridable, so the same plugin can drive DeepSeek's native search, commandcode, or any other Anthropic-/OpenAI-compatible endpoint.",
   "version": "0.1.0",
-  "publishConfig": {
-    "access": "public"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/loommii/dsh-web-search-plus.git"
-  },
+  "description": "DSH web_search 增强插件：为官方 web-search-deepseek 的 model 字段提供第三方 GUI（host 代理架构）",
   "type": "module",
   "main": "lib/index.js",
-  "types": "lib/types/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./lib/types/index.d.ts",
-      "default": "./lib/index.js"
-    },
-    "./invariant": {
-      "types": "./lib/types/invariant.d.ts",
-      "default": "./lib/invariant.js"
-    },
-    "./src/*": "./src/*",
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
     "./package.json": "./package.json"
   },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime"
+      ]
+    }
+  },
   "files": [
-    "lib/index.js",
-    "lib/invariant.js",
-    "lib/types/**/*.d.ts"
+    "lib",
+    "cordis.patch.yml",
+    "README.md"
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/dsh-credentials": "^0.1.1-rc.2",
-    "@deepseek-ai/dsh-launch-environment": "^0.1.1-rc.2",
-    "@deepseek-ai/dsh-invariants": "^0.1.1-rc.2",
-    "@deepseek-ai/dsh-session": "^0.1.1-rc.2",
-    "@deepseek-ai/dsh-web": "^0.1.1-rc.2",
     "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-agent": "^0.1.1-rc.2",
-    "@deepseek-ai/dsh-settings": "^0.1.1-rc.2"
+    "@deepseek-ai/dsh-client-runtime": "^0.1.1-rc.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "dependencies": {
+    "@deepseek-ai/dsh-settings": "^0.1.1-rc.2",
     "@deepseek-ai/schemastery": "^3.18.1"
   }
 }

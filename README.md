@@ -1,64 +1,91 @@
 # @loommii/dsh-web-search-plus
 
-[English](#) | 中文(计划中)
-
-`@deepseek-ai/dsh-web-search-deepseek` 的可配置化增强版（fork）。
-
-> 状态：v0.1 — 已完成源文件复制，等待 3 个设计决策后开始魔改。
-> 详细需求记录见 `tmp/web-search-plus-需求记录.md`（本地，不上传）。
-
----
+> DSH 官方 `@deepseek-ai/dsh-web-search-deepseek` 插件的 **隐藏设置项的第三方 GUI**。
+>
+> **当前状态：v0.1.0** — host 代理架构：本插件自己的设置命名空间 + host 端代理写入官方命名空间。
 
 ## 这是什么
 
-DSH（DeepSeek Harness）的官方 web_search 插件 `@deepseek-ai/dsh-web-search-deepseek` 写死了 3 件事：
+DSH 官方 web_search 插件（`@deepseek-ai/dsh-web-search-deepseek`）的部分设置项没有出现在官方 GUI 里（官方设置卡片只暴露 baseURL / maxUses / apiKey）
 
-| 项 | 官方默认值 | 问题 |
-|---|---|---|
-| `model` | `deepseek-v4-flash` | 写死在源码，GUI 不暴露；接到 Anthropic-兼容但 model 不同的端点（如 commandcode 的 `deepseek/deepseek-v4-flash`）就 400 |
-| 路径拼接 | ${baseURL}/messages | 硬拼 `/messages`，路径不可配置 |
-| auth header | `x-api-key: ...` + `authorization: Bearer ...` | 双发，固定 Anthropic 风格 |
+例如：
+**model** —— 只能手动编辑 `~/.dsh/settings.yaml`，本插件为它补一个设置页输入框。
 
-本项目把这 3 项变成用户可配置——同一份代码既能驱动 DeepSeek 官方搜索、也能驱动 commandcode、也能驱动任何 Anthropic-/OpenAI-兼容端点。
+## 安装
 
-## 与官方 plugin 的关系
+### 步骤 1 — 安装插件
 
-- 不修改 DSH 全局安装目录下的官方代码
-- 不发布到 npm（仅 GitHub）
-- 通过 git URL 在 DSH 的 profile 里安装
-- 官方 `@deepseek-ai/dsh-web-search-deepseek` 仍可独立运行
-
-## 计划改造点（待用户决策）
-
-1. model 可配置 — 通过 yaml / 环境变量覆盖默认 `deepseek-v4-flash`
-2. baseURL 完整可配 — 用户给完整 URL（含路径），plugin 不再自动拼接 `/messages`
-3. auth scheme 可配置 — 在 Anthropic `x-api-key` 与 OpenAI `Authorization: Bearer` 之间切换
-
-详见 `tmp/web-search-plus-需求记录.md` §5.5（待决项 3/4/5）。
-
-## 当前状态
-
-- 官方 plugin 的 `lib/index.js` / `lib/invariant.js` / `lib/types/**.d.ts` 已复制到本仓库
-- `LICENSE`（MIT）保留上游版权声明
-- `package.json` 重写为 `@loommii/dsh-web-search-plus`，peerDependencies 锁版本与上游一致
-- 3 个魔改点尚未应用——等用户决定
-- 还未做新 plugin 的 GUI 卡片（如果要做）
-- 还未与 DSH 集成实测
-
-## 安装（计划中）
-
-```yaml
-# 在 DSH profile 的 cordis patch 里加：
-# - id: web-search-plus
-#   name: '@loommii/dsh-web-search-plus'
-#   config:
-#     baseURL: https://api.commandcode.ai/provider/v1
-#     model: deepseek/deepseek-v4-flash
-#     authScheme: openai-bearer
+```sh
+dsh plugin --profile web add github:loommii/dsh-web-search-plus
 ```
 
-## 关联项目
+> `dsh plugin add` 会自动完成：
+> 1. 从 GitHub 拉取并安装插件（含依赖 `@deepseek-ai/dsh-settings`、`@deepseek-ai/schemastery`）
+> 2. 写进 profile 的 `dependencies`
+> 3. 因为包声明了 `dsh.bundle.patch`，**自动加入 `dsh.profile.bundles`**（DSH 的 reconcile 机制，无需手动编辑）
+> 4. 自动合并 `cordis.patch.yml` 到 profile 配置树
 
-- [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) — DSH 主仓库
-- [本仓库 GitHub 镜像](https://github.com/loommii/dsh-web-search-plus) — 发布地址
-- `@deepseek-ai/dsh-web-search-deepseek` — 本项目 fork 的官方 plugin
+### 步骤 2 — 重启 dsh（DSH 无热重载）
+
+```sh
+lsof -nP -iTCP:3080 -sTCP:LISTEN
+kill <pid>
+nohup dsh web > ~/.dsh/dsh.log 2>&1 &
+```
+
+> 若安装时 pnpm 提示 `allowBuilds` 拦截（git 依赖会执行 prepare 脚本），按提示把对应包名加进
+> `~/.dsh/profiles/web/pnpm-workspace.yaml` 的 `allowBuilds` 后重跑。
+
+## 验证
+
+1. 打开 `http://127.0.0.1:3080` → 设置 → 左侧「网页搜索增强」
+2. 看到「当前生效 model」（应显示官方当前值，默认 `deepseek-v4-flash` 或你在 settings.yaml 里配的值）
+3. 输入 `deepseek-v4-pro` → 保存 → 提示"已保存"
+4. 检查 `~/.dsh/settings.yaml`：
+
+```yaml
+web-search-deepseek:
+  baseURL: https://api.commandcode.ai/provider/v1
+  model: deepseek-v4-pro
+```
+
+5. 发起一次 web 搜索，确认请求体里的 model 变成了新值（可在会话日志的 `web/deepseek-search-llm-request` 事件查看）
+6. 点「清除覆盖」→ `model` 键从 settings.yaml 消失 → 官方回落到默认
+
+## 与官方插件的关系
+
+- ❌ 不修改 `/opt/homebrew/lib/.../dsh-web-search-deepseek/` 下的官方代码
+- ✅ 独立 cordis 插件，作为 profile bundle 加载
+- ✅ 通过 settings seam 的用户层覆盖机制实现（官方原生支持，非 monkey-patch）
+- ⚠️ 官方「插件设置」卡片（baseURL/maxUses/apiKey）与本页并存；两边写同一份 settings.yaml，互不冲突
+
+## 项目结构
+
+```
+dsh-web-search-plus/
+├── package.json          # v0.1.0：+dsh-settings +schemastery 依赖
+├── cordis.patch.yml      # insert：把插件 id 注入 profile 根
+├── lib/
+│   ├── index.js          # host：注册 web-search-plus 命名空间 + 代理写入官方
+│   └── client.js         # client：设置页（model 输入框 + 当前生效展示）
+└── README.md
+```
+
+## 卸载
+
+```sh
+dsh plugin --profile web remove @loommii/dsh-web-search-plus
+```
+
+`dsh plugin remove` 会自动完成（无需手动编辑）：
+1. 从 profile 的 `dependencies` 移除该包
+2. 从 `dsh.profile.bundles` 移除对应条目（DSH 的 reconcile 机制）
+
+然后重启 dsh 生效（步骤同上）：
+```sh
+lsof -nP -iTCP:3080 -sTCP:LISTEN
+kill <pid>
+nohup dsh web > ~/.dsh/dsh.log 2>&1 &
+```
+
+重启后，之前由 `cordis.patch.yml` 注入的插件条目（web-search-plus）随 bundle 层消失而不再生效。
