@@ -1,6 +1,6 @@
 {
   "name": "@loommii/dsh-web-search-plus",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DSH web_search 增强插件：为官方 web-search-deepseek 的 model 字段提供第三方 GUI（host 代理架构）",
   "type": "module",
   "main": "lib/index.js",
